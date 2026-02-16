@@ -163,7 +163,74 @@ namespace ParallelBuildsMonitor.Tests
             return Path.Combine(testDirectory, fileName ?? "");
         }
 
+        /// <summary>
+        /// Validates that the hardware information line contains all expected fields.
+        /// </summary>
+        private static bool ValidateHardwareInfoLine(string line)
+        {
+            if (string.IsNullOrEmpty(line))
+                return false;
+
+            // Check for required fields with flexible value matching
+            var requiredPatterns = new[]
+            {
+                @"CRICTICAL PATH for",
+                @"Build Started:\s*\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}",
+                @"Processors:\s*\d+",
+                @"Cores:\s*\d+",
+                @"CPU Speed:\s*[\d.]+\s*GHz",
+                @"Hyper Threading:\s*(Enabled|Disabled)",
+                @"RAM:\s*\d+\s*(GB|TB)",
+                @"HDD:\s*\d+\s*SSD"
+            };
+
+            var regex = new System.Text.RegularExpressions.Regex(@"[\r\n]");
+            foreach (var pattern in requiredPatterns)
+            {
+                if (!System.Text.RegularExpressions.Regex.IsMatch(line, pattern))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Compare CSV content where the first line contains hardware-specific values.
+        /// The first line is validated to ensure required hardware fields are present with valid values,
+        /// but exact values are not compared as they vary by hardware.
+        /// All other lines must match exactly.
+        /// </summary>
+        /// <param name="current">The actual CSV output</param>
+        /// <param name="expected">The expected CSV output</param>
+        /// <returns>True if comparison succeeds, false otherwise</returns>
+        public static bool CompareCsvWithHardwareInfo(string current, string expected)
+        {
+            var currentLines = current.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+            var expectedLines = expected.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+
+            // Both must have at least the hardware info line
+            if (currentLines.Length == 0 || expectedLines.Length == 0)
+                return false;
+
+            // Validate first line has required hardware fields (but don't compare exact values)
+            if (!ValidateHardwareInfoLine(currentLines[0]))
+                return false;
+
+            // Both must have the same number of lines
+            if (currentLines.Length != expectedLines.Length)
+                return false;
+
+            // Compare all remaining lines (line 1 onwards) exactly
+            for (int i = 1; i < currentLines.Length; i++)
+            {
+                if (currentLines[i] != expectedLines[i])
+                    return false;
+            }
+
+            return true;
+        }
     }
+
 
     [TestClass()]
     public class CsvTestHelperMethodsTests
@@ -715,7 +782,7 @@ namespace ParallelBuildsMonitor.Tests
 
             string current = File.ReadAllText(TestUtils.GetTestFile(tmpFileName));
             string expected = File.ReadAllText(TestUtils.GetTestFile("PBM Example.sln CP WithBuildTiming.csv"));
-            Assert.IsTrue(current == expected);
+            Assert.IsTrue(TestUtils.CompareCsvWithHardwareInfo(current, expected), "CSV content mismatch");
 
             File.Delete(tmpFileName);
         }
@@ -740,7 +807,7 @@ namespace ParallelBuildsMonitor.Tests
 
             string current = File.ReadAllText(TestUtils.GetTestFile(tmpFileName));
             string expected = File.ReadAllText(TestUtils.GetTestFile("PBM Example.sln CP WithoutBuildTiming.csv"));
-            Assert.IsTrue(current == expected);
+            Assert.IsTrue(TestUtils.CompareCsvWithHardwareInfo(current, expected), "CSV content mismatch");
 
             File.Delete(tmpFileName);
         }
