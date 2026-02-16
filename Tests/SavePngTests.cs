@@ -237,6 +237,7 @@ namespace ParallelBuildsMonitor.Tests
                 MachineInfo mi = MachineInfo.Instance;
                 var machineInfo = new PrivateObject(mi); // Use PrivateObject class to change private member of MachineInfo object.
                 machineInfo.SetField("info", machineIndepenentInfo);
+                machineInfo.SetField("separatorCached", " | ");  // Set separator to avoid generating machine dependent info and use just set ones
 
                 Assert.AreEqual(MachineInfo.Instance.ToString(), machineIndepenentInfo); // Verify if internal data were updated
             }
