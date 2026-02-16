@@ -233,17 +233,18 @@ namespace ParallelBuildsMonitor.Tests
         public void SavePng_BuildFinished()
         {
             { // MachineInfo is in the picture, so make MachineInfo as machine indepenent string for unit test puroposes
-                string machineIndepenentInfo = "Processors: 1 | Cores: 2 | CPU Speed: 2.7GHz | Hyper Threading: Enabled | RAM: 8GB | HDD: 1 SSD";
+                string machineIndepenentInfo = "Processors: 1  |  Cores: 2  |  CPU Speed: 2.7GHz  |  Hyper Threading: Enabled  |  RAM: 8GB  |  HDD: 1 SSD";
                 MachineInfo mi = MachineInfo.Instance;
                 var machineInfo = new PrivateObject(mi); // Use PrivateObject class to change private member of MachineInfo object.
                 machineInfo.SetField("info", machineIndepenentInfo);
+                machineInfo.SetField("separatorCached", "  |  ");  // Set separator to avoid generating machine dependent info and use just set ones
 
                 Assert.AreEqual(MachineInfo.Instance.ToString(), machineIndepenentInfo); // Verify if internal data were updated
             }
 
             { // Feed DataModel with sample data
                 DataModel dm = DataModel.Instance;
-                var dataModel = new PrivateObject(dm); // Use PrivateObject class to change private member of MachineInfo object.
+                var dataModel = new PrivateObject(dm); // Use PrivateObject class to change private member of DataModel object.
                 dataModel.SetProperty("SolutionName", "Example.sln");
                 dataModel.SetProperty("StartTime", new System.DateTime(636849135031953262L));
                 dataModel.SetProperty("MaxParallelBuilds", 4);
