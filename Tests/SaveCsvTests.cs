@@ -1,12 +1,12 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json.Linq;
 using ParallelBuildsMonitor;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
-
 using CM = ParallelBuildsMonitor.Tests.ComparisonMethods;
 
 namespace ParallelBuildsMonitor.Tests
@@ -164,9 +164,13 @@ namespace ParallelBuildsMonitor.Tests
         }
 
         /// <summary>
-        /// Validates that the hardware information line contains all expected fields.
+        /// Validates that the MachineInfo line which is hardware dependent contains all expected fields in appropriate format.
         /// </summary>
-        private static bool ValidateHardwareInfoLine(string line)
+        /// It validates if:
+        ///     - it contains every value (no missing values)
+        ///     - value is in appropriate format (number or string)
+        ///     - value itself is not compared
+        private static bool ValidateMachineInfoLine(string line)
         {
             if (string.IsNullOrEmpty(line))
                 return false;
@@ -203,7 +207,7 @@ namespace ParallelBuildsMonitor.Tests
         /// <param name="current">The actual CSV output</param>
         /// <param name="expected">The expected CSV output</param>
         /// <returns>True if comparison succeeds, false otherwise</returns>
-        public static bool CompareCsvWithHardwareInfo(string current, string expected)
+        public static bool CompareCsvWithMachineInfo(string current, string expected)
         {
             var currentLines = current.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
             var expectedLines = expected.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
@@ -213,7 +217,7 @@ namespace ParallelBuildsMonitor.Tests
                 return false;
 
             // Validate first line has required hardware fields (but don't compare exact values)
-            if (!ValidateHardwareInfoLine(currentLines[0]))
+            if (!ValidateMachineInfoLine(currentLines[0]))
                 return false;
 
             // Both must have the same number of lines
@@ -782,7 +786,7 @@ namespace ParallelBuildsMonitor.Tests
 
             string current = File.ReadAllText(TestUtils.GetTestFile(tmpFileName));
             string expected = File.ReadAllText(TestUtils.GetTestFile("PBM Example.sln CP WithBuildTiming.csv"));
-            Assert.IsTrue(TestUtils.CompareCsvWithHardwareInfo(current, expected), "CSV content mismatch");
+            Assert.IsTrue(TestUtils.CompareCsvWithMachineInfo(current, expected), "CSV content mismatch");
 
             File.Delete(tmpFileName);
         }
@@ -807,7 +811,7 @@ namespace ParallelBuildsMonitor.Tests
 
             string current = File.ReadAllText(TestUtils.GetTestFile(tmpFileName));
             string expected = File.ReadAllText(TestUtils.GetTestFile("PBM Example.sln CP WithoutBuildTiming.csv"));
-            Assert.IsTrue(TestUtils.CompareCsvWithHardwareInfo(current, expected), "CSV content mismatch");
+            Assert.IsTrue(TestUtils.CompareCsvWithMachineInfo(current, expected), "CSV content mismatch");
 
             File.Delete(tmpFileName);
         }
